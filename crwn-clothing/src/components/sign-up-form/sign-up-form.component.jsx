@@ -1,5 +1,10 @@
 import { useState } from 'react';
 
+import {
+  createAuthUserWithEmailAndPassword,
+  createUserDocumentFromAuth,
+} from '../../../utils/firebase/firebase.utils';
+
 const defaultFormFields = {
   displayName: '',
   email: '',
@@ -11,6 +16,35 @@ const SignUpForm = () => {
   const [formFields, setFormFields] = useState(defaultFormFields);
   const { displayName, email, password, confirmPassword } = formFields;
 
+  const resetFormFields = () => {
+    setFormFields(defaultFormFields);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (password !== confirmPassword) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    try {
+      const { user } = await createAuthUserWithEmailAndPassword(
+        email,
+        password
+      );
+
+      await createUserDocumentFromAuth(user, { displayName });
+      resetFormFields();
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        alert('중복된 이메일입니다.');
+      } else {
+        console.error('user creation encountered an error', error);
+      }
+    }
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -20,7 +54,7 @@ const SignUpForm = () => {
   return (
     <div>
       <h1>sign up with your email and password</h1>
-      <form onSubmit={() => {}}>
+      <form onSubmit={handleSubmit}>
         <label>Display Name</label>
         <input
           type="text"
